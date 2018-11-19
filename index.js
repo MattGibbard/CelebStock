@@ -8,10 +8,9 @@ const MongoClient = require('mongodb').MongoClient;
 
 const app = express();
 
-var configVars = require('./config');
-
 //Set global variables
 let port = process.env.PORT || 8080;
+mongoURL = 'mongodb://system:Password5@ds024548.mlab.com:24548/celebstock';
 const mongoDBName = 'celebstock';
 
 //Allow app to use Public directory for CSS
@@ -23,7 +22,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
 
 //Mongo connection
-MongoClient.connect(configVars.mongoURL, { useNewUrlParser: true },function(err, database) {
+MongoClient.connect(mongoURL, { useNewUrlParser: true },function(err, database) {
     if (err) return console.log(chalk.red(err));
     db = database.db(mongoDBName);
     console.log(chalk.green('MongoDB connected'));
