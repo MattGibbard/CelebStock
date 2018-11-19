@@ -2,6 +2,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const chalk = require('chalk');
+var moment = require('moment');
 var request = require('request');
 const MongoClient = require('mongodb').MongoClient;
 
@@ -40,7 +41,7 @@ app.get('/admin', function(req, res) {
 
 //All render
 app.get('/all', function(req, res) {
-    db.collection("celebs").find({}).toArray(function(err, result) {
+    db.collection("celebs").find({}).sort( { celebrityPrice: -1 } ).toArray(function(err, result) {
         if (err) throw err;
 
         if (result.length == 0) {
@@ -53,16 +54,17 @@ app.get('/all', function(req, res) {
     })
 });
 
-app.post('/overwriteall', function(req, res) {
+app.post('/freshstart', function(req, res) {
+    console.time('Fresh start completed');
     db.collection('celebs').deleteMany({});
-    console.log('Celebs DB emptied');
+    console.log(chalk.blue('Celebs DB emptied'));
 
     request(celebrityBucksAPIOPtions, function (error, response, body) {
         if (error) throw error;
 
-        console.log('error:', error); // Print the error if one occurred
-        console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-        console.log('Celebs found:', body.CelebrityValues.length); // Print the HTML for the Google homepage.
+        //console.log('error:', error); // Print the error if one occurred
+        //console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+        console.log(chalk.blue('Celebs found:', body.CelebrityValues.length)); // Print the HTML for the Google homepage.
 
         amountOfCelebs = body.CelebrityValues.length;
 
@@ -70,14 +72,63 @@ app.post('/overwriteall', function(req, res) {
 
         var i;
         for (i = 0; i < amountOfCelebs; i++) {
-            var currentCeleb = {celebrityId: body.CelebrityValues[i].celebId, celebrityName: body.CelebrityValues[i].name, celebrityPrice: body.CelebrityValues[i].price};
+            var currentCeleb = {celebrityId: body.CelebrityValues[i].celebId, celebrityName: body.CelebrityValues[i].name, celebrityPrice: body.CelebrityValues[i].price/1000, lastUpdated: moment().format('H:mm:ss, Do MMMM YYYY')};
             //console.log(body.CelebrityValues[i].name);
 
             db.collection('celebs').insertOne(currentCeleb, function(err, result) {
                 if (err) return console.log(chalk.red(err));
             });
 
-            console.log(chalk.green(currentCeleb.celebrityName + ' added to users'));
+            console.log(chalk.green(currentCeleb.celebrityName + ' added'));
+        }
+        console.timeEnd('Fresh start completed');
+        res.redirect('/admin');
+
+
+    });
+});
+
+
+//app.post('/clearall', function(req, res) {
+//    db.collection('celebs').deleteMany({});
+//    console.log('Celebs DB emptied');  
+//    res.redirect('/admin');
+//});
+
+
+
+
+app.post('/fetchandupdate', function(req, res) {
+
+    request(celebrityBucksAPIOPtions, function (error, response, body) {
+        if (error) throw error;
+
+        //console.log('error:', error); // Print the error if one occurred
+        //console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+        console.log(chalk.blue('Celebs found:', body.CelebrityValues.length)); // Print the HTML for the Google homepage.
+
+        amountOfCelebs = body.CelebrityValues.length;
+
+        //add error checking here on api request
+
+        var i;
+        for (i = 0; i < amountOfCelebs; i++) {
+            var currentCeleb = {celebrityId: body.CelebrityValues[i].celebId, celebrityName: body.CelebrityValues[i].name, celebrityPrice: body.CelebrityValues[i].price/1000, lastUpdated: moment().format('H:mm:ss, Do MMMM YYYY')};
+            //console.log(body.CelebrityValues[i].name);
+
+            db.collection('celebs').findOneAndUpdate({celebrityId: body.CelebrityValues[i].celebId}, {$set: currentCeleb}, {upsert: true}, function(err, result) {
+                if (err) return console.log(chalk.red(err));
+
+                if (result.ok === 1 && result.lastErrorObject.updatedExisting === true) {
+                    console.log(result.value.celebrityName + ' updated')
+                } else if (result.ok === 1 && result.lastErrorObject.updatedExisting === false) {
+                    console.log('New celeb added');
+                } else {
+                    console.log('Error adding ' + result.value.celebrityName);
+                }
+            });
+
+
         }
 
         res.redirect('/admin');
@@ -87,42 +138,6 @@ app.post('/overwriteall', function(req, res) {
 });
 
 
-app.post('/fetchandupdate', function(req, res) {
-
-    request(celebrityBucksAPIOPtions, function (error, response, body) {
-        if (error) throw error;
-
-        console.log('error:', error); // Print the error if one occurred
-        console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-        console.log('Celebs found:', body.CelebrityValues.length); // Print the HTML for the Google homepage.
-
-        amountOfCelebs = body.CelebrityValues.length;
-
-        //add error checking here on api request
-
-        var i;
-        for (i = 0; i < amountOfCelebs; i++) {
-            var currentCeleb = {celebrityId: body.CelebrityValues[i].celebId, celebrityName: body.CelebrityValues[i].name, celebrityPrice: body.CelebrityValues[i].price};
-            //console.log(body.CelebrityValues[i].name);
-            
-            db.collection('celebs').find(currentCeleb).toArray(function(err, result) {
-                console.log(result.length);
-
-                if (result && result.length == 0)
-                    console.log("Insert needs to be here! Need to insert " + body.CelebrityValues[i].name);
-            })
-        
-        }
-        res.redirect('/admin');
-    })
-});
-
-app.post('/clearall', function(req, res) {
-    db.collection('celebs').deleteMany({});
-    console.log('Celebs DB emptied');
-    
-    res.redirect('/admin');
-});
 
 //Listen server
 app.listen(port, function() {
@@ -133,7 +148,7 @@ app.listen(port, function() {
 var celebrityBucksAPIOPtions = {
     uri: 'https://celebritybucks.com/developers/export/JSON',
     qs: {
-        limit: '5' // -> uri + '?access_token=xxxxx%20xxxxx'
+        //limit: '5' // -> uri + '?access_token=xxxxx%20xxxxx'
     },
     headers: {
     //    'User-Agent': 'Request-Promise'

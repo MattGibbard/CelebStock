@@ -11,26 +11,25 @@
   <table>
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Price</th>
+        <th>Photo</th>
         <th>Name</th>
-
+        <th>Price</th>
+        <th>Unique ID</th>
+        <th>Last updated</th>
       </tr>
     </thead>
 
     <tbody>
       <% for(var i=0; i < celebList.length; i++) { %>
-     <tr>
-
-       <td><%= celebList[i].celebrityId %></td>
-       <td><%= celebList[i].celebrityPrice %></td>
-       <td><%= celebList[i].celebrityName %></td>
-
-
-     </tr>
-  <% } %>
+      <tr>
+        <td><img src="https://celebritybucks.com/images/celebs/mid/<%= celebList[i].celebrityId %>.jpg" alt="" height="42" width="42"></td>
+        <td><a href="https://news.google.com/search?q=<%= celebList[i].celebrityName %>" target="_blank"><%= celebList[i].celebrityName %></a></td>
+        <td>£<%= celebList[i].celebrityPrice %></td>
+        <td><%= celebList[i].celebrityId %></td>
+        <td><%= celebList[i].lastUpdated %></td>
+      </tr>
+      <% } %>
     </tbody>
-
   </table>
 
 </body>
