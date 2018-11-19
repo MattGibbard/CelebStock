@@ -31,7 +31,7 @@ MongoClient.connect(configVars.mongoURL, { useNewUrlParser: true },function(err,
 
 //Homepage render
 app.get('/', function(req, res) {
-    res.render('pages/home.ejs');
+    res.redirect('/all');
 });
 
 //Admin render
