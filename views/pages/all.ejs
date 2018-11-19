@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>CelebStock</h1>
+<h2>All</h2>
+<a href="/all">All</a>
+<a href="/admin">Admin</a>
+
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Price</th>
+        <th>Name</th>
+
+      </tr>
+    </thead>
+
+    <tbody>
+      <% for(var i=0; i < celebList.length; i++) { %>
+     <tr>
+
+       <td><%= celebList[i].celebrityId %></td>
+       <td><%= celebList[i].celebrityPrice %></td>
+       <td><%= celebList[i].celebrityName %></td>
+
+
+     </tr>
+  <% } %>
+    </tbody>
+
+  </table>
+
+</body>
+</html> 
