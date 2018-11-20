@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const chalk = require('chalk');
 var moment = require('moment');
 var request = require('request');
+var schedule = require('node-schedule');
 const MongoClient = require('mongodb').MongoClient;
 
 const app = express();
@@ -199,3 +200,41 @@ let updateMongoDB = function(p) {
 
 
 
+
+
+
+
+var j = schedule.scheduleJob('30 * * * *', function() {
+    console.log('scheduled job starting')
+    request(celebrityBucksAPIOPtions, function (error, response, body) {
+        if (error) throw error;
+
+        //console.log('error:', error); // Print the error if one occurred
+        //console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+        console.log(chalk.blue('Celebs found:', body.CelebrityValues.length)); // Print the HTML for the Google homepage.
+
+        amountOfCelebs = body.CelebrityValues.length;
+
+        //add error checking here on api request
+
+        var i;
+        for (i = 0; i < amountOfCelebs; i++) {
+            var currentCeleb = {celebrityId: body.CelebrityValues[i].celebId, celebrityName: body.CelebrityValues[i].name, celebrityPrice: body.CelebrityValues[i].price/1000, lastUpdated: moment().format('H:mm:ss, Do MMMM YYYY')};
+            //console.log(body.CelebrityValues[i].name);
+
+            db.collection('celebs').findOneAndUpdate({celebrityId: body.CelebrityValues[i].celebId}, {$set: currentCeleb}, {upsert: true}, function(err, result) {
+                if (err) return console.log(chalk.red(err));
+
+                if (result.ok === 1 && result.lastErrorObject.updatedExisting === true) {
+                    console.log(result.value.celebrityName + ' updated')
+                } else if (result.ok === 1 && result.lastErrorObject.updatedExisting === false) {
+                    console.log('New celeb added');
+                } else {
+                    console.log('Error adding ' + result.value.celebrityName);
+                }
+            });
+
+        }
+
+    });
+})
